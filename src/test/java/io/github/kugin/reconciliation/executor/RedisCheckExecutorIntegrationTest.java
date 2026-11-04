@@ -10,10 +10,9 @@ import io.github.kugin.reconciliation.domain.CheckEntry;
 import io.github.kugin.reconciliation.entry.TestA;
 import io.github.kugin.reconciliation.entry.TestB;
 import io.github.kugin.reconciliation.enums.ExecutorStatusEnum;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -25,12 +24,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class RedisCheckExecutorIntegrationTest {
 
     private RedisServer redisServer;
     private RedissonClient redissonClient;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         redisServer = RedisServer.newRedisServer()
                 .port(63792)
@@ -42,7 +43,7 @@ public class RedisCheckExecutorIntegrationTest {
         redissonClient = Redisson.create(config);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException {
         redissonClient.shutdown();
         redisServer.stop();
@@ -84,8 +85,8 @@ public class RedisCheckExecutorIntegrationTest {
 
         executor.process("20260426");
 
-        Assert.assertEquals(ExecutorStatusEnum.END.toString(), redisManager.getCurrentStatus());
-        Assert.assertFalse(redisManager.isProcessing());
+        assertEquals(ExecutorStatusEnum.END.toString(), redisManager.getCurrentStatus());
+        assertFalse(redisManager.isProcessing());
     }
 
     @Test
@@ -122,8 +123,8 @@ public class RedisCheckExecutorIntegrationTest {
 
         // Start first executor, wait until lock is acquired
         CompletableFuture<CheckContext> f1 = CompletableFuture.supplyAsync(() -> executor1.process("20260426"));
-        Assert.assertTrue(holdLock.await(2, TimeUnit.SECONDS));
-        Assert.assertTrue(manager1.isProcessing());
+        assertTrue(holdLock.await(2, TimeUnit.SECONDS));
+        assertTrue(manager1.isProcessing());
 
         // Second executor: blocked because lock is held
         RedisExecutorManager manager2 = new RedisExecutorManager("redis-reentrant", redissonClient);
@@ -149,13 +150,13 @@ public class RedisCheckExecutorIntegrationTest {
 
         CheckContext ctx2 = executor2.process("20260426");
         // Second executor was blocked and returned early — no data loaded
-        Assert.assertNull(ctx2.getCheckResult());
+        assertNull(ctx2.getCheckResult());
 
         // Release lock, let first executor finish
         releaseLock.countDown();
         CheckContext ctx1 = f1.get(5, TimeUnit.SECONDS);
 
-        Assert.assertEquals(ExecutorStatusEnum.END.toString(), manager1.getCurrentStatus());
-        Assert.assertNotNull(ctx1.getCheckResult());
+        assertEquals(ExecutorStatusEnum.END.toString(), manager1.getCurrentStatus());
+        assertNotNull(ctx1.getCheckResult());
     }
 }

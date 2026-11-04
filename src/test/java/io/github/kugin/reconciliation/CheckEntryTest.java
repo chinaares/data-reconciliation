@@ -4,11 +4,12 @@ import io.github.kugin.reconciliation.domain.CheckAdapter;
 import io.github.kugin.reconciliation.domain.CheckEntry;
 import io.github.kugin.reconciliation.entry.TestA;
 import io.github.kugin.reconciliation.entry.TestB;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Kugin
@@ -20,8 +21,8 @@ public class CheckEntryTest {
         TestB b = new TestB("b", "tee", 13d);
         CheckEntry entryA = CheckEntry.wrap(a, "name", Arrays.asList("amount"));
         CheckEntry entryB = CheckEntry.wrap(b);
-        Assert.assertNotNull(entryA.getCheckData());
-        Assert.assertNotNull(entryB.getCheckData());
+        assertNotNull(entryA.getCheckData());
+        assertNotNull(entryB.getCheckData());
     }
 
     @Test
@@ -37,6 +38,6 @@ public class CheckEntryTest {
 
         CheckEntry entryA = new CheckEntry(a);
         CheckEntry entryB = new CheckEntry(b);
-        Assert.assertNotNull(entryA.getCheckData());
+        assertNotNull(entryA.getCheckData());
     }
 }

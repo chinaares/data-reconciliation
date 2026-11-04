@@ -2,10 +2,9 @@ package io.github.kugin.reconciliation.before;
 
 import io.github.kugin.reconciliation.domain.CheckAdapter;
 import io.github.kugin.reconciliation.domain.CheckEntry;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.redisson.Redisson;
 import org.redisson.api.RList;
 import org.redisson.api.RedissonClient;
@@ -17,12 +16,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class RedisResourceLoaderTest {
 
     private RedisServer redisServer;
     private RedissonClient redissonClient;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         redisServer = RedisServer.newRedisServer()
                 .port(63791)
@@ -34,7 +35,7 @@ public class RedisResourceLoaderTest {
         redissonClient = Redisson.create(config);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException {
         redissonClient.shutdown();
         redisServer.stop();
@@ -60,7 +61,7 @@ public class RedisResourceLoaderTest {
                 },
                 redissonClient
         );
-        Assert.assertEquals("recon:src:20260426", loader.getRedisKey("20260426"));
+        assertEquals("recon:src:20260426", loader.getRedisKey("20260426"));
     }
 
     @Test
@@ -78,10 +79,10 @@ public class RedisResourceLoaderTest {
         );
 
         List<CheckEntry> entries = loader.load("20260426");
-        Assert.assertEquals(3, entries.size());
-        Assert.assertEquals("a1", entries.get(0).getKey());
+        assertEquals(3, entries.size());
+        assertEquals("a1", entries.get(0).getKey());
         Map<String, Object> checkData = entries.get(0).getCheckData();
-        Assert.assertEquals("val1", checkData.get("value"));
+        assertEquals("val1", checkData.get("value"));
     }
 
     @Test
@@ -108,8 +109,8 @@ public class RedisResourceLoaderTest {
         );
 
         List<CheckEntry> entries = loader.load("20260426");
-        Assert.assertEquals(2, entries.size());
-        Assert.assertEquals("x1", entries.get(0).getKey());
+        assertEquals(2, entries.size());
+        assertEquals("x1", entries.get(0).getKey());
     }
 
     @Test
@@ -124,6 +125,6 @@ public class RedisResourceLoaderTest {
         );
 
         List<CheckEntry> entries = loader.load("20260426");
-        Assert.assertTrue(entries.isEmpty());
+        assertTrue(entries.isEmpty());
     }
 }

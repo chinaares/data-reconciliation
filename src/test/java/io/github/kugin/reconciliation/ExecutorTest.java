@@ -8,12 +8,13 @@ import io.github.kugin.reconciliation.entry.TestB;
 import io.github.kugin.reconciliation.enums.ExecutorStatusEnum;
 import io.github.kugin.reconciliation.executor.CheckExecutor;
 import io.github.kugin.reconciliation.executor.SimpleCache;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Kugin
@@ -22,7 +23,7 @@ public class ExecutorTest {
 
     private CheckConfig checkConfig;
 
-    @Before
+    @BeforeEach
     public void before() {
         TestA a1 = new TestA("a1", "remark", 1d);
         TestA a2 = new TestA("a2", "remark", 1d);
@@ -45,15 +46,15 @@ public class ExecutorTest {
     public void testExecutor() {
         CheckExecutor executor = CheckExecutor.buildExecutor(checkConfig);
         executor.process("20210204");
-        Assert.assertNotNull(executor.getExecutorManager().getCurrentStatus());
-        Assert.assertEquals(ExecutorStatusEnum.END.toString(), executor.getExecutorManager().getCurrentStatus());
+        assertNotNull(executor.getExecutorManager().getCurrentStatus());
+        assertEquals(ExecutorStatusEnum.END.toString(), executor.getExecutorManager().getCurrentStatus());
     }
 
     @Test
     public void testSimpleCache() {
         FIFOCache<String, Object> instance = SimpleCache.getInstance();
         FIFOCache<String, Object> instance1 = SimpleCache.getInstance();
-        Assert.assertEquals(instance, instance1);
+        assertEquals(instance, instance1);
     }
 
     @Test
