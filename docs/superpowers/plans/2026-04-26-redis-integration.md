@@ -6,7 +6,7 @@
 
 **Architecture:** Two new classes — `RedisExecutorManager` extends `AbstractExecutorManager` and replaces `FIFOCache` with Redisson `RBucket`/`RLock`; `RedisResourceLoader<T>` implements `ResourceLoader` mirroring `FileResourceLoader` but reading from Redis `RList`. RedissonClient is injected by the caller.
 
-**Tech Stack:** Java 21, Redisson 3.x, JUnit 4, embedded-redis (test)
+**Tech Stack:** Java 21, Redisson 3.x, JUnit 5.11.3, embedded-redis (test)
 
 **Spec:** `docs/superpowers/specs/2026-04-26-redis-integration-design.md`
 
@@ -17,7 +17,7 @@
 **Files:**
 - Modify: `pom.xml`
 
-- [ ] **Step 1: Add Redisson and embedded-redis dependency to pom.xml**
+- [x] **Step 1: Add Redisson and embedded-redis dependency to pom.xml**
 
 Add to `<dependencies>` before the Junit dependency:
 
@@ -56,12 +56,12 @@ with:
         </dependency>
 ```
 
-- [ ] **Step 2: Verify dependencies resolve**
+- [x] **Step 2: Verify dependencies resolve**
 
 Run: `mvn compile`
 Expected: BUILD SUCCESS, redisson jar on classpath
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add pom.xml
@@ -75,7 +75,7 @@ git commit -m "build: add Redisson and embedded-redis dependencies"
 **Files:**
 - Create: `src/test/java/io/github/kugin/reconciliation/executor/RedisExecutorManagerTest.java`
 
-- [ ] **Step 1: Create test class with embedded Redis setup**
+- [x] **Step 1: Create test class with embedded Redis setup**
 
 ```java
 package io.github.kugin.reconciliation.executor;
@@ -175,12 +175,12 @@ public class RedisExecutorManagerTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails (class doesn't exist yet)**
+- [x] **Step 2: Run test to verify it fails (class doesn't exist yet)**
 
 Run: `mvn test -Dtest=RedisExecutorManagerTest#testNormalLifecycle`
 Expected: COMPILATION ERROR — `RedisExecutorManager` does not exist
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/test/java/io/github/kugin/reconciliation/executor/RedisExecutorManagerTest.java
@@ -194,7 +194,7 @@ git commit -m "test: add RedisExecutorManager tests (red, no impl yet)"
 **Files:**
 - Create: `src/main/java/io/github/kugin/reconciliation/executor/RedisExecutorManager.java`
 
-- [ ] **Step 1: Write RedisExecutorManager**
+- [x] **Step 1: Write RedisExecutorManager**
 
 ```java
 package io.github.kugin.reconciliation.executor;
@@ -269,12 +269,12 @@ public class RedisExecutorManager extends AbstractExecutorManager {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they pass**
+- [x] **Step 2: Run tests to verify they pass**
 
 Run: `mvn test -Dtest=RedisExecutorManagerTest`
-Expected: BUILD SUCCESS, all 4 tests pass
+Expected: BUILD SUCCESS, all tests pass
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/main/java/io/github/kugin/reconciliation/executor/RedisExecutorManager.java
@@ -288,7 +288,7 @@ git commit -m "feat: add RedisExecutorManager with Redisson-based distributed st
 **Files:**
 - Create: `src/test/java/io/github/kugin/reconciliation/before/RedisResourceLoaderTest.java`
 
-- [ ] **Step 1: Create test class with embedded Redis setup**
+- [x] **Step 1: Create test class with embedded Redis setup**
 
 ```java
 package io.github.kugin.reconciliation.before;
@@ -421,12 +421,12 @@ public class RedisResourceLoaderTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails (class doesn't exist yet)**
+- [x] **Step 2: Run test to verify it fails (class doesn't exist yet)**
 
 Run: `mvn test -Dtest=RedisResourceLoaderTest#testKeyPatternFormat`
 Expected: COMPILATION ERROR — `RedisResourceLoader` does not exist
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/test/java/io/github/kugin/reconciliation/before/RedisResourceLoaderTest.java
@@ -440,7 +440,7 @@ git commit -m "test: add RedisResourceLoader tests (red, no impl yet)"
 **Files:**
 - Create: `src/main/java/io/github/kugin/reconciliation/before/RedisResourceLoader.java`
 
-- [ ] **Step 1: Write RedisResourceLoader**
+- [x] **Step 1: Write RedisResourceLoader**
 
 ```java
 package io.github.kugin.reconciliation.before;
@@ -495,12 +495,12 @@ public class RedisResourceLoader<T> implements ResourceLoader {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they pass**
+- [x] **Step 2: Run tests to verify they pass**
 
 Run: `mvn test -Dtest=RedisResourceLoaderTest`
 Expected: BUILD SUCCESS, all 4 tests pass
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/main/java/io/github/kugin/reconciliation/before/RedisResourceLoader.java
@@ -514,7 +514,7 @@ git commit -m "feat: add RedisResourceLoader for loading reconciliation data fro
 **Files:**
 - Create: `src/test/java/io/github/kugin/reconciliation/executor/RedisCheckExecutorIntegrationTest.java`
 
-- [ ] **Step 1: Create integration test using CheckExecutor with RedisExecutorManager**
+- [x] **Step 1: Create integration test using CheckExecutor with RedisExecutorManager**
 
 ```java
 package io.github.kugin.reconciliation.executor;
@@ -658,24 +658,24 @@ public class RedisCheckExecutorIntegrationTest {
 }
 ```
 
-- [ ] **Step 2: Run integration tests**
+- [x] **Step 2: Run integration tests**
 
 Run: `mvn test -Dtest=RedisCheckExecutorIntegrationTest`
 Expected: BUILD SUCCESS, both tests pass
 
-- [ ] **Step 3: Run all tests to confirm no regressions**
+- [x] **Step 3: Run all tests to confirm no regressions**
 
 Run: `mvn test`
-Expected: BUILD SUCCESS, all 12 tests pass (4 existing + 4 RedisExecutorManager + 4 RedisResourceLoader + 2 integration — actually 8 existing + 12 new = 10 total)
+Expected: BUILD SUCCESS, all tests pass
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/test/java/io/github/kugin/reconciliation/executor/RedisCheckExecutorIntegrationTest.java
 git commit -m "test: add Redis CheckExecutor integration tests"
 ```
 
-- [ ] **Step 5: Update README to mark TODOs complete**
+- [x] **Step 5: Update README to mark TODOs complete**
 
 Replace the TODO lines:
 ```

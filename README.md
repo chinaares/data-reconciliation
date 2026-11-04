@@ -41,5 +41,5 @@
 ### TODO:
 - [x] 基于redis的对账处理器实现
 - [x] 基于redis的执行器管理
-- [ ] 资源加载器FileResourceLoader实现自动解析
+- [x] 资源加载器FileResourceLoader实现自动解析
 - [ ] 相同形式的数据源对比,流式处理比对
