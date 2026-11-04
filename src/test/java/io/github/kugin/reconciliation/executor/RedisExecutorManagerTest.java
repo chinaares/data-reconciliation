@@ -10,6 +10,7 @@ import org.redisson.config.Config;
 import redis.embedded.RedisServer;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,6 +91,22 @@ public class RedisExecutorManagerTest {
 
         manager.setStatus(ExecutorStatusEnum.ERROR);
         assertEquals("ERROR", manager.getCurrentStatus());
+    }
+
+    @Test
+    public void testStatusTTL() {
+        RedisExecutorManager manager = new RedisExecutorManager("test-ttl", redissonClient);
+        manager.initDate("20260426");
+        manager.setStatus(ExecutorStatusEnum.BEFORE);
+
+        long remainTimeToLive = redissonClient.getBucket(manager.getExecutorKey()).remainTimeToLive();
+        assertTrue(remainTimeToLive > 0, "status key must expire");
+        assertTrue(remainTimeToLive <= TimeUnit.HOURS.toMillis(24), "status key TTL must not exceed 24h");
+
+        // After the key expires/disappears the manager treats the date as never run
+        redissonClient.getBucket(manager.getExecutorKey()).delete();
+        assertNull(manager.getCurrentStatus());
+        assertFalse(manager.isComplete());
     }
 
     @Test
