@@ -35,7 +35,7 @@
 | afterCheckProcessor  |       后置处理器       |    N     |    可以自定义实现或继承`AbstractAfterCheckProcessor`     |
 
 
-使用样例参考 `CheckEntryTest`：对于对比实体的包装方式，`ExecutorTest`：执行器的构建与执行。
+使用样例参考 `CheckEntryTest`：对于对比实体的包装方式，`ExecutorTest`：执行器的构建与执行，`SimpleCheckExampleTest`：最简完整示例（注解/适配器两种包装方式 + 差异断言）。
 
 
 ### TODO:
