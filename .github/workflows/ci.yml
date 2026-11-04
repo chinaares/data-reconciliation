@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # embedded-redis ships native redis-server binaries for both, so the
+        # Redis-backed tests run natively on each runner.
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          # Keep this a bare major version. The pom pins <jdkToolchain>
+          # <version>21</version>, and Maven matches that request against the
+          # toolchain's declared <version> string exactly. A full 21.0.x
+          # version here would not match and surefire would abort with
+          # "Requested toolchain specification did not match any configured
+          # toolchain: {version=21}".
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: pom.xml
+
+      - name: Configure Maven toolchain
+        # setup-java also writes ~/.m2/toolchains.xml, but it derives the
+        # <version> it declares from the java-version input. Writing it
+        # explicitly keeps the toolchain pinned to <version>21</version>
+        # regardless of which JDK setup-java resolved.
+        run: |
+          mkdir -p "$HOME/.m2"
+          cat > "$HOME/.m2/toolchains.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>21</version>
+                <vendor>temurin</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${JAVA_HOME}</jdkHome>
+              </configuration>
+            </toolchain>
+          </toolchains>
+          EOF
+
+      - name: Build and test
+        run: ./mvnw -B --no-transfer-progress clean verify
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: data-reconciliation-${{ matrix.os }}
+          path: target/*.jar
+          if-no-files-found: error

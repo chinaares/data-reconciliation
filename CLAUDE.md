@@ -4,8 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Prerequisites
 
-- JDK 21 (Homebrew: `/opt/homebrew/opt/openjdk@21`)
-- `~/.m2/toolchains.xml` must point to JDK 21:
+- JDK 21. The `pom.xml` pins `<jdkToolchain><version>21</version></jdkToolchain>` for both
+  `maven-compiler-plugin` and `maven-surefire-plugin`, so **a JDK 21 toolchain is mandatory** —
+  building on a newer JDK (e.g. 25) fails with Lombok's
+  `NoSuchFieldException: com.sun.tools.javac.code.TypeTag :: UNKNOWN`.
+- Install one, e.g. `brew install openjdk@21` (→ `/opt/homebrew/opt/openjdk@21`) or use an existing
+  JDK 21 (e.g. Zulu: `/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home`).
+- `~/.m2/toolchains.xml` must point at that JDK 21 home — `<vendor>` must match the actual JDK
+  vendor, otherwise Maven silently falls back to the default JDK:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -14,13 +20,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     <type>jdk</type>
     <provides>
       <version>21</version>
-      <vendor>openjdk</vendor>
+      <vendor>zulu</vendor>
     </provides>
     <configuration>
-      <jdkHome>/opt/homebrew/opt/openjdk@21</jdkHome>
+      <jdkHome>/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home</jdkHome>
     </configuration>
   </toolchain>
 </toolchains>
+```
+
+Verify the toolchain is picked up — the build log must print the JDK path, not just succeed:
+
+```bash
+mvn clean compile -X 2>&1 | grep "Toolchain in maven-compiler-plugin"
+# [INFO] Toolchain in maven-compiler-plugin: JDK[/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home]
 ```
 
 ## Build / Test

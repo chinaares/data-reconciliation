@@ -2,3 +2,9 @@
 *.iml
 .DS_Store
 target.worktrees/
+target/
+.explyt
+.classpath
+.factorypath
+.project
+.settings/
