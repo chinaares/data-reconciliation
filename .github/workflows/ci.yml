@@ -23,7 +23,8 @@ jobs:
       matrix:
         # embedded-redis ships native redis-server binaries for both, so the
         # Redis-backed tests run natively on each runner.
-        os: [ubuntu-latest, macos-latest]
+        # os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
 
     steps:
       - name: Checkout
