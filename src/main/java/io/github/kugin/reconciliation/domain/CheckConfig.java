@@ -5,6 +5,7 @@ import io.github.kugin.reconciliation.after.CheckAfter;
 import io.github.kugin.reconciliation.after.CheckSync;
 import io.github.kugin.reconciliation.before.BeforeCheckProcessor;
 import io.github.kugin.reconciliation.before.CheckPre;
+import io.github.kugin.reconciliation.before.OrderedResourceLoader;
 import io.github.kugin.reconciliation.before.ResourceLoader;
 import io.github.kugin.reconciliation.before.ResourceReader;
 import io.github.kugin.reconciliation.check.CheckProcessor;
@@ -52,6 +53,16 @@ public class CheckConfig {
      * 下游数据源
      */
     private ResourceLoader targetLoader;
+
+    /**
+     * STREAM 模式的上游有序数据源: 仅 STREAM 模式使用
+     */
+    private OrderedResourceLoader srcOrderedLoader;
+
+    /**
+     * STREAM 模式的下游有序数据源: 仅 STREAM 模式使用
+     */
+    private OrderedResourceLoader targetOrderedLoader;
 
     /**
      * 数据源读取 (包含上下游)
