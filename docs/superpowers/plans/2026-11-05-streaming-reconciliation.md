@@ -764,5 +764,6 @@ git commit -m "test: add streaming parity coverage and document STREAM mode"
 本计划相对已批准规格有**一处新增**（非规格遗漏，是实现所需）：
 
 - **`CheckContext.preCheckFailed`（布尔，默认 false）**。规格 §5 要求「`doPre` 返回 false → 不进入 CHECK，直接进入 AFTER」，但 `CheckExecutor.process` 是无条件调用 `checkProcessor.compare(context)` 的，现有 `CheckContext` 没有可承载该信号的字段。流式路径用该标记让 `StreamingCheckProcessor.compare` 直接返回，从而真正跳过比对阶段。该字段仅流式路径使用，MEMORY 路径不读它，行为不变。
+- **事实性勘误**：「审查重点 #5」表格声称 MEMORY 模式遇 null key 抛 NPE（`Collectors.toMap` 不接受 null key）——实测（JDK 21.0.12.1，zulu）`Collectors.toMap` 允许 null key（底层 `HashMap.merge` 只校验 value），MEMORY 路径**静默接受** null key 并收入 `sourceMap` / `targetMap`；STREAM 路径显式抛 `CheckException("对账 key 不能为 null")`。两者的实际差异是「MEMORY 静默接受 vs STREAM 显式拒绝」，而非「抛 NPE vs 接受」。测试已按实际行为钉住（见 `StreamingCheckProcessorTest`）。
 
 规格其余部分（组件清单、算法、契约、错误语义、测试分层）在本计划中逐条落地，无删减。
