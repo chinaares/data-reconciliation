@@ -202,6 +202,56 @@ class StreamingCheckExecutorTest {
     }
 
     /**
+     * 是否通过必须委托给 checkSync, 而不是无论配置与否都回落摘要
+     * <p>
+     * 构造一个「摘要与覆写结论相反」的组合: 三个调账回调都返回 {@link CheckSyncEnum#NO_SYNC},
+     * 使摘要里的未调账计数大于 0(回落分支会判为未通过); 而 {@link CheckSync#isComplete(CheckContext)}
+     * 被覆写为固定返回 true。只有 {@link io.github.kugin.reconciliation.after.StreamingAfterCheckProcessor}
+     * 真正委托给 checkSync 时, 最终状态才会是 END; 若它错误地只读摘要, 状态会是 ERROR
+     */
+    @Test
+    void completenessDelegatesToCheckSyncInsteadOfSummary() {
+        CheckSync sync = new CheckSync() {
+            @Override
+            public CheckSyncEnum syncSourceMore(CheckUnit checkUnit) {
+                return CheckSyncEnum.NO_SYNC;
+            }
+
+            @Override
+            public CheckSyncEnum syncTargetMore(CheckUnit checkUnit) {
+                return CheckSyncEnum.NO_SYNC;
+            }
+
+            @Override
+            public CheckSyncEnum syncDifferent(CheckUnit checkUnit) {
+                return CheckSyncEnum.NO_SYNC;
+            }
+
+            @Override
+            public boolean isComplete(CheckContext context) {
+                return true;
+            }
+        };
+
+        CheckConfig config = CheckConfig.builder()
+                .id("stream-delegate-is-complete")
+                .mode(CheckMode.STREAM)
+                .srcOrderedLoader(date -> Stream.of(entry("a", 1d)))
+                .targetOrderedLoader(date -> Stream.of(entry("a", 2d)))
+                .checkSync(sync)
+                .build();
+
+        CheckExecutor executor = CheckExecutor.buildExecutor(config);
+        CheckContext context = executor.process(DATE);
+
+        //摘要中的未调账计数大于 0, 回落摘要的判定会得到「未通过」
+        assertEquals(1L, context.getSummary().getSyncCounts().get(CheckSyncEnum.NO_SYNC));
+        //最终状态跟随覆写的 isComplete(true): 证明确实委托给了 checkSync
+        assertEquals(ExecutorStatusEnum.END.toString(), executor.getExecutorManager().getCurrentStatus());
+        assertTrue(executor.getExecutorManager().isComplete());
+    }
+
+    /**
      * 返回 IGNORE: 不算未调账, 判定为通过
      */
     @Test
