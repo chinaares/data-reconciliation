@@ -8,6 +8,7 @@ import io.github.kugin.reconciliation.before.CheckPre;
 import io.github.kugin.reconciliation.before.ResourceLoader;
 import io.github.kugin.reconciliation.before.ResourceReader;
 import io.github.kugin.reconciliation.check.CheckProcessor;
+import io.github.kugin.reconciliation.enums.CheckMode;
 import lombok.Builder;
 import lombok.Data;
 
@@ -80,4 +81,10 @@ public class CheckConfig {
      * 对账后置处理逻辑: 可为空
      */
     private CheckAfter checkAfter;
+
+    /**
+     * 执行模式: 默认为 MEMORY
+     */
+    @Builder.Default
+    private CheckMode mode = CheckMode.MEMORY;
 }

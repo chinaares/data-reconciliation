@@ -2,6 +2,7 @@ package io.github.kugin.reconciliation.after;
 
 import io.github.kugin.reconciliation.domain.CheckContext;
 import io.github.kugin.reconciliation.domain.CheckResult;
+import io.github.kugin.reconciliation.domain.CheckSummary;
 import io.github.kugin.reconciliation.domain.CheckUnit;
 import io.github.kugin.reconciliation.enums.CheckSyncEnum;
 
@@ -39,11 +40,19 @@ public interface CheckSync {
      * 对账是否通过
      * <p>
      * 此处入参不是checkResult,是为了解决,对比过程中,没有不同,但实际状态又不能认为成功的情况:如支付中 两边都是pay_wait的情况,对比不出来,但又不能视为通过
+     * <p>
+     * 流式模式下上下文携带摘要, 以摘要中的未调账计数判定; 全量模式下仍以比对结果判定
      *
      * @param context 对账上下文
      * @return 对账是否通过
      */
     default boolean isComplete(CheckContext context) {
+        // 流式模式: 读摘要中的 NO_SYNC 计数
+        CheckSummary summary = context.getSummary();
+        if (summary != null) {
+            return summary.getSyncCounts().getOrDefault(CheckSyncEnum.NO_SYNC, 0L) == 0;
+        }
+        // 全量模式: 原有逻辑, 逐字保留
         CheckResult checkResult = context.getCheckResult();
         if (checkResult == null) {
             return false;

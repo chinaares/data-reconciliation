@@ -66,4 +66,14 @@ public class CheckContext {
      * 执行时间
      */
     private StopWatch stopWatch;
+
+    /**
+     * 流式比对结果摘要; MEMORY 模式为 null
+     */
+    private CheckSummary summary;
+
+    /**
+     * 前置校验未通过标记; 仅 STREAM 模式使用, 为 true 时跳过比对阶段
+     */
+    private boolean preCheckFailed;
 }
