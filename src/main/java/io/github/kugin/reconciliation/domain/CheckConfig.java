@@ -5,9 +5,11 @@ import io.github.kugin.reconciliation.after.CheckAfter;
 import io.github.kugin.reconciliation.after.CheckSync;
 import io.github.kugin.reconciliation.before.BeforeCheckProcessor;
 import io.github.kugin.reconciliation.before.CheckPre;
+import io.github.kugin.reconciliation.before.OrderedResourceLoader;
 import io.github.kugin.reconciliation.before.ResourceLoader;
 import io.github.kugin.reconciliation.before.ResourceReader;
 import io.github.kugin.reconciliation.check.CheckProcessor;
+import io.github.kugin.reconciliation.enums.CheckMode;
 import lombok.Builder;
 import lombok.Data;
 
@@ -53,6 +55,16 @@ public class CheckConfig {
     private ResourceLoader targetLoader;
 
     /**
+     * STREAM 模式的上游有序数据源: 仅 STREAM 模式使用
+     */
+    private OrderedResourceLoader srcOrderedLoader;
+
+    /**
+     * STREAM 模式的下游有序数据源: 仅 STREAM 模式使用
+     */
+    private OrderedResourceLoader targetOrderedLoader;
+
+    /**
      * 数据源读取 (包含上下游)
      */
     private ResourceReader resourceReader;
@@ -80,4 +92,10 @@ public class CheckConfig {
      * 对账后置处理逻辑: 可为空
      */
     private CheckAfter checkAfter;
+
+    /**
+     * 执行模式: 默认为 MEMORY
+     */
+    @Builder.Default
+    private CheckMode mode = CheckMode.MEMORY;
 }
