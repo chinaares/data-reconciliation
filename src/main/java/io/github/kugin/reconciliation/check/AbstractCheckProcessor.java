@@ -25,6 +25,33 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
 
     private static final Log log = LogFactory.get();
 
+    /**
+     * 数值字段容差: 字段名 -> 容差; 为null时所有字段精确比较
+     */
+    protected Map<String, BigDecimal> tolerances;
+
+    /**
+     * 设置数值字段容差
+     *
+     * @param tolerances 字段名 -> 容差, 可为null
+     */
+    public void setTolerances(Map<String, BigDecimal> tolerances) {
+        this.tolerances = tolerances;
+    }
+
+    /**
+     * 取指定字段的容差
+     *
+     * @param field 字段名
+     * @return 容差, 未配置时为null
+     */
+    protected BigDecimal toleranceOf(String field) {
+        if (tolerances == null || field == null) {
+            return null;
+        }
+        return tolerances.get(field);
+    }
+
     public void compareCheck(CheckContext context) {
         List<CheckEntry> source = context.getSource();
         List<CheckEntry> target = context.getTarget();
@@ -95,6 +122,8 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
 
     /**
      * 比较两个 checkData 的详细属性不同
+     * <p>
+     * 数值字段若配置了容差({@link #tolerances}), 差值绝对值不超过容差时视为相等
      *
      * @param sourceData 来源 checkData
      * @param targetData 目标 checkData
@@ -103,7 +132,7 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
     public Map<String, FieldkUnit> compareCheckData(Map<String, Object> sourceData, Map<String, Object> targetData) {
         Map<String, FieldkUnit> differnt = new HashMap<>();
         sourceData.forEach((k, v) -> {
-            if (targetData.containsKey(k) && equivalent(v, targetData.get(k), null)) {
+            if (targetData.containsKey(k) && equivalent(v, targetData.get(k), toleranceOf(k))) {
                 return;
             }
             differnt.put(k, FieldkUnit.builder().fieldName(k).source(v).target(targetData.get(k)).build());

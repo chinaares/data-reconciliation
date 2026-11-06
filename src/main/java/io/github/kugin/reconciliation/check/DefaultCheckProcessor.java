@@ -6,6 +6,7 @@ import io.github.kugin.reconciliation.domain.CheckResult;
 import io.github.kugin.reconciliation.domain.CheckUnit;
 import io.github.kugin.reconciliation.enums.CheckStateEnum;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -13,6 +14,22 @@ import java.util.stream.Collectors;
  * @author Kugin
  */
 public class DefaultCheckProcessor extends AbstractCheckProcessor {
+
+    /**
+     * 精确比较, 不设置任何容差
+     */
+    public DefaultCheckProcessor() {
+        this(null);
+    }
+
+    /**
+     * 指定数值字段容差
+     *
+     * @param tolerances 字段名 -> 容差, 可为null(等价于精确比较)
+     */
+    public DefaultCheckProcessor(Map<String, BigDecimal> tolerances) {
+        setTolerances(tolerances);
+    }
 
     @Override
     public void doCompare(CheckContext context) {

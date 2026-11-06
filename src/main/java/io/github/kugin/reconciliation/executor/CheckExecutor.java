@@ -95,7 +95,7 @@ public class CheckExecutor {
             beforeCheckProcessor = new DefaultBeforeCheckProcessor(resourceReader, checkConfig.getCheckPre());
 
             //对账处理器组装
-            checkProcessor = Optional.ofNullable(checkConfig.getCheckProcessor()).orElse(new DefaultCheckProcessor());
+            checkProcessor = Optional.ofNullable(checkConfig.getCheckProcessor()).orElse(new DefaultCheckProcessor(checkConfig.getTolerances()));
 
             //后置处理器组装
             afterCheckProcessor = new DefaultAfterCheckProcessor(checkConfig.getCheckSync(), checkConfig.getCheckAfter());

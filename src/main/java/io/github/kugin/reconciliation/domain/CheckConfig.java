@@ -13,6 +13,9 @@ import io.github.kugin.reconciliation.enums.CheckMode;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 /**
  * 对账配置
  *
@@ -75,6 +78,13 @@ public class CheckConfig {
      * 自定义对账处理器
      */
     private CheckProcessor checkProcessor;
+
+    /**
+     * 数值字段容差: 字段名 -> 容差
+     * <p>
+     * 差值绝对值不超过容差时视为相等; 为null(默认)时所有字段精确比较
+     */
+    private Map<String, BigDecimal> tolerances;
 
     //后置处理器配置-----------------------------------
 
