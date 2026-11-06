@@ -1,6 +1,8 @@
 package io.github.kugin.reconciliation.check;
 
 
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import io.github.kugin.reconciliation.domain.*;
 import io.github.kugin.reconciliation.enums.CheckStateEnum;
 import io.github.kugin.reconciliation.enums.CheckSyncEnum;
@@ -20,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Kugin
  */
 public abstract class AbstractCheckProcessor implements CheckProcessor {
+
+    private static final Log log = LogFactory.get();
 
     public void compareCheck(CheckContext context) {
         List<CheckEntry> source = context.getSource();
@@ -117,6 +121,7 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
      * 判断两个字段值是否等价
      * <p>
      * 数值类型(Number)按数值比较, 与scale无关, 例如 BigDecimal("10.0") 与 BigDecimal("10.00") 视为相等;
+     * NaN/Infinity 等无法比较的数值一律判为差异, 避免把非法金额静默当成一致;
      * 其余类型使用 {@link Object#equals(Object)} 比较.
      *
      * @param a        源值
@@ -132,11 +137,16 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
             return false;
         }
         if (a instanceof Number && b instanceof Number) {
+            if (isNotFinite((Number) a) || isNotFinite((Number) b)) {
+                //NaN/Infinity 无法比较, 显式判为差异, 不静默判等
+                log.warn("数值无法比较(NaN/Infinity), 判定为差异: source={}, target={}", a, b);
+                return false;
+            }
             BigDecimal left = toBigDecimal((Number) a);
             BigDecimal right = toBigDecimal((Number) b);
             if (left == null || right == null) {
-                //无法转换为BigDecimal(如NaN/Infinity), 退化为equals比较
-                return a.equals(b);
+                log.warn("数值无法转换为BigDecimal, 判定为差异: source={}, target={}", a, b);
+                return false;
             }
             if (tolerance == null) {
                 return left.compareTo(right) == 0;
@@ -144,6 +154,22 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
             return left.subtract(right).abs().compareTo(tolerance.abs()) <= 0;
         }
         return a.equals(b);
+    }
+
+    /**
+     * 判断数值是否为NaN或Infinity
+     *
+     * @param number 数值
+     * @return 是否为NaN或Infinity
+     */
+    private static boolean isNotFinite(Number number) {
+        if (number instanceof Double d) {
+            return Double.isNaN(d) || Double.isInfinite(d);
+        }
+        if (number instanceof Float f) {
+            return Float.isNaN(f) || Float.isInfinite(f);
+        }
+        return false;
     }
 
     /**
@@ -166,6 +192,9 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
         try {
             return new BigDecimal(number.toString());
         } catch (NumberFormatException e) {
+            //意料之外的兜底: NaN/Infinity 已在 isNotFinite 中提前拦截
+            log.warn("数值无法转换为BigDecimal: {}", number);
+            log.warn(e);
             return null;
         }
     }
