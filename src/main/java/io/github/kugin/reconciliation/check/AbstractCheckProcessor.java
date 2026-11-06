@@ -7,10 +7,14 @@ import io.github.kugin.reconciliation.enums.CheckSyncEnum;
 import io.github.kugin.reconciliation.enums.ExecutorStatusEnum;
 import io.github.kugin.reconciliation.executor.ExecutorManager;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Kugin
@@ -95,7 +99,7 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
     public Map<String, FieldkUnit> compareCheckData(Map<String, Object> sourceData, Map<String, Object> targetData) {
         Map<String, FieldkUnit> differnt = new HashMap<>();
         sourceData.forEach((k, v) -> {
-            if (targetData.containsKey(k) && v.equals(targetData.get(k))) {
+            if (targetData.containsKey(k) && equivalent(v, targetData.get(k), null)) {
                 return;
             }
             differnt.put(k, FieldkUnit.builder().fieldName(k).source(v).target(targetData.get(k)).build());
@@ -107,6 +111,63 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
             differnt.put(k, FieldkUnit.builder().fieldName(k).target(v).build());
         });
         return differnt;
+    }
+
+    /**
+     * 判断两个字段值是否等价
+     * <p>
+     * 数值类型(Number)按数值比较, 与scale无关, 例如 BigDecimal("10.0") 与 BigDecimal("10.00") 视为相等;
+     * 其余类型使用 {@link Object#equals(Object)} 比较.
+     *
+     * @param a        源值
+     * @param b        目标值
+     * @param tolerance 数值容差, 为null时要求数值完全相等
+     * @return 是否等价
+     */
+    protected static boolean equivalent(Object a, Object b, BigDecimal tolerance) {
+        if (a == null && b == null) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        if (a instanceof Number && b instanceof Number) {
+            BigDecimal left = toBigDecimal((Number) a);
+            BigDecimal right = toBigDecimal((Number) b);
+            if (left == null || right == null) {
+                //无法转换为BigDecimal(如NaN/Infinity), 退化为equals比较
+                return a.equals(b);
+            }
+            if (tolerance == null) {
+                return left.compareTo(right) == 0;
+            }
+            return left.subtract(right).abs().compareTo(tolerance.abs()) <= 0;
+        }
+        return a.equals(b);
+    }
+
+    /**
+     * 将Number转换为BigDecimal, 无法转换时返回null
+     *
+     * @param number 数值
+     * @return BigDecimal, 不可转换时为null
+     */
+    private static BigDecimal toBigDecimal(Number number) {
+        if (number instanceof BigDecimal bigDecimal) {
+            return bigDecimal;
+        }
+        if (number instanceof BigInteger bigInteger) {
+            return new BigDecimal(bigInteger);
+        }
+        if (number instanceof Byte || number instanceof Short || number instanceof Integer
+                || number instanceof Long || number instanceof AtomicInteger || number instanceof AtomicLong) {
+            return BigDecimal.valueOf(number.longValue());
+        }
+        try {
+            return new BigDecimal(number.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**
