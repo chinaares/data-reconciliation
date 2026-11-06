@@ -528,12 +528,14 @@ class ReconcileServiceTest {
     @Test
     void runs_and_archives_batch_with_counts() {
         // mock 两个 loader：平台 [O001, O002]，渠道 [O001(金额一致), O003]
+        // 注意：status 是「归一化状态」（loader 层已把平台侧 orderState "3"/"5" 归一化为 "SUCCESS"），
+        // 两侧都写 "SUCCESS"，以验证「归一化后两侧一致」——若某侧 loader 未归一化，此测试会暴露 STATUS_DIFF
         when(paycoinLoader.load(any())).thenReturn(List.of(
-            entry("O001", Map.of("amount", 100L, "handlingFee", 0L, "status", "3")),
-            entry("O002", Map.of("amount", 200L, "handlingFee", 0L, "status", "3"))));
+            entry("O001", Map.of("amount", 100L, "handlingFee", 0L, "status", "SUCCESS")),
+            entry("O002", Map.of("amount", 200L, "handlingFee", 0L, "status", "SUCCESS"))));
         when(csvLoader.load(any())).thenReturn(List.of(
-            entry("O001", Map.of("amount", 100L, "handlingFee", 0L, "status", "3")),
-            entry("O003", Map.of("amount", 300L, "handlingFee", 0L, "status", "3"))));
+            entry("O001", Map.of("amount", 100L, "handlingFee", 0L, "status", "SUCCESS")),
+            entry("O003", Map.of("amount", 300L, "handlingFee", 0L, "status", "SUCCESS"))));
         ReconcileBatch batch = service.run("2026-11-01");
         assertEquals(1, batch.getMatchedCount());
         assertEquals(2, batch.getDiffCount());
@@ -550,7 +552,12 @@ class ReconcileServiceTest {
 
 - [ ] **步骤 3：实现 `public ReconcileBatch run(String date)`**
 
-按规格 §2.3 的 7 步：① 构造 `CheckConfig`（`id="globalpay:payin"`、`srcLoader=PaycoinSourceLoader`、`targetLoader=GlobalpayCsvLoader`、`allowEmptySide=true`、`tolerances` 从 `reconcile_config` 读入）；② `CheckExecutor.buildExecutor(config).process(date)`；③ 读 `context.getCheckResult()` → `DiffPersistenceService.persist(...)`；④ 写 `reconcile_batch`（matched/diff 计数、金额、平账率、状态 SUCCESS），异常时状态 FAIL + remark 留堆栈。
+按规格 §2.3 的 7 步：① 构造 `CheckConfig`（`id="globalpay:payin"`、`srcLoader=PaycoinSourceLoader`、`targetLoader=GlobalpayCsvLoader`、`allowEmptySide=true`、`tolerances` 从 `reconcile_config` 按 (channel, bizType) 读入）；② `CheckExecutor.buildExecutor(config).process(date)`；③ 读 `context` → 调用 `DiffPersistenceService.persist(...)`；④ 写 `reconcile_batch`（matched/diff 计数、金额、平账率、状态 SUCCESS），异常时状态 FAIL + remark 留堆栈。
+
+**任务 11 审查裁决要求（本任务接线时落实）**：
+- **persist 签名扩展**：把 `context.getSourceMap()`/`getTargetMap()`（完整 `CheckEntry.checkData`）传入 `DiffPersistenceService.persist`，使 DIFFERENT 差异能用完整 checkData 填 6 个类型列 + `raw_source_json`/`raw_target_json` 原始快照（任务 11 当前只填了相异字段，导致 FEE_DIFF 的金额列为 NULL、raw 快照缺相等字段）。`differentFields` 仍只用于分类与 `diff_fields`。
+- **criticalAmountCents 按 (channel, bizType) 解析传入**：`ReconcileService` 用 `ReconcileConfigRepository.findFirstByChannelAndBizTypeAndEnabledTrue(channel, bizType)` 读配置（不是任务 11 的 `findAll().filter(channel).findFirst()`），把 `criticalAmountCents` 传给 persist。若该派生查询尚不存在，补上。
+- **status 归一化已在 loader 层完成**（任务 8 补丁：paycoin orderState ∈ successOrderStates → "SUCCESS"），本任务无需再归一化；测试里两侧 status 都写 "SUCCESS"（loader 已归一化的假设）。
 
 - [ ] **步骤 4：运行测试验证通过**
 
