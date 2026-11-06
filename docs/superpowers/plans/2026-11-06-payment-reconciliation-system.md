@@ -211,6 +211,7 @@ class AllowEmptySideTest {
 - `CheckExecutor.buildExecutor` 的 MEMORY 分支换为 `new DefaultCheckProcessor(checkConfig.getTolerances(), checkConfig.isAllowEmptySide())`
 - **STREAM 分支补接容差**（任务 2 遗留缺口）：`StreamingCheckProcessor` 继承 `compareCheckData` 但其 `tolerances` 恒为 null，导致 STREAM 模式下 `CheckConfig.tolerances` 被**静默忽略** —— 对账引擎里「配置了却不生效」是比「不配置」更危险的失败模式。为此给 `StreamingCheckProcessor` 加四参构造 `public StreamingCheckProcessor(OrderedResourceLoader srcLoader, OrderedResourceLoader targetLoader, CheckSync checkSync, Map<String, BigDecimal> tolerances)`，原三参构造保留并委托 `this(srcLoader, targetLoader, checkSync, null)`；`CheckExecutor.buildExecutor` 的 STREAM 分支改用四参构造传入 `checkConfig.getTolerances()`。
   补测：`StreamingCheckProcessor` 在 STREAM 模式下容差生效（差值 ≤ 容差判为平账、超出则产出 DIFFERENT）。
+- **README 配置参数表补录**：README.md 的 `CheckConfig` 配置参数表需补两行 —— `tolerances`（按字段配置的金额容差，键为 checkData 字段名/实体字段名，单位与字段值一致，未配置时精确比较）和 `allowEmptySide`（单侧数据为空时是否记为单边差异而非抛异常，默认 false）。
 
 - [ ] **步骤 4：运行测试验证通过**
 
