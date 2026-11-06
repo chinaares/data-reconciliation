@@ -84,7 +84,7 @@ class NumericCompareTest {
 
 - [ ] **步骤 3：修改 `compareCheckData`，数值类型用 compareTo**
 
-在 `AbstractCheckProcessor.compareCheckData` 的 source 遍历中，把 `v.equals(targetData.get(k))` 替换为私有方法 `equivalent(v, targetData.get(k), null)`；新增 `protected static boolean equivalent(Object a, Object b, BigDecimal tolerance)`：两者皆 null 为 true；一者 null 为 false；`a instanceof Number && b instanceof Number` 时转 `BigDecimal` 用 `compareTo == 0`（`tolerance` 为 null）；否则 `a.equals(b)`。
+在 `AbstractCheckProcessor.compareCheckData` 的 source 遍历中，把 `v.equals(targetData.get(k))` 替换为 `equivalent(v, targetData.get(k), null)`；新增 `protected static boolean equivalent(Object a, Object b, BigDecimal tolerance)`：两者皆 null 为 true；一者 null 为 false；`a instanceof Number && b instanceof Number` 时转 `BigDecimal` 用 `compareTo == 0`（`tolerance` 为 null）；否则 `a.equals(b)`。
 
 - [ ] **步骤 4：运行测试验证通过**
 
