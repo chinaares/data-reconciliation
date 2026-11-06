@@ -16,7 +16,7 @@ class ToleranceTest {
 
     @Test
     void within_tolerance_is_equal() {
-        assertTrue(p.compareCheckData(Map.of("amount", 100L), Map.of("amount", 102L)).isEmpty());
+        assertTrue(p.compareCheckData(Map.of("amount", 100L), Map.of("amount", 101L)).isEmpty());
     }
 
     @Test

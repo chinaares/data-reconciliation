@@ -82,7 +82,15 @@ public class CheckConfig {
     /**
      * 数值字段容差: 字段名 -> 容差
      * <p>
-     * 差值绝对值不超过容差时视为相等; 为null(默认)时所有字段精确比较
+     * 数值字段的差值绝对值不超过容差时判定为相等; 未配置(为null)或该字段未配容差时按精确比较。
+     * <p>
+     * <b>键名口径</b>: 必须是 checkData 字段名 / 实体字段名(即参与比较的字段键),
+     * <b>不是数据库列名</b>; 键名对不上属于"配了却不生效"的静默失败, 请核对后再上线。
+     * <p>
+     * <b>生效范围</b>: 仅对默认的 {@link io.github.kugin.reconciliation.check.DefaultCheckProcessor}
+     * (MEMORY 模式)生效; 配置了自定义 {@link CheckProcessor} 时本项不生效。
+     * <p>
+     * <b>单位</b>: 容差单位与被比较字段值的单位一致(如字段单位为"元", 容差即以"元"计)。
      */
     private Map<String, BigDecimal> tolerances;
 

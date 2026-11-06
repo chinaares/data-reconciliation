@@ -27,6 +27,14 @@
 
 ### Added
 
+- **按字段配置金额容差**：`CheckConfig.tolerances`（`Map<String, BigDecimal>`，字段名 → 容差）。
+  数值字段的差值绝对值 ≤ 容差时判定为相等。
+  - 未配置（`null`）时保持精确比较，**默认行为不变**（向后兼容）；
+  - 键必须是 **checkData 字段名 / 实体字段名**，**不是数据库列名**；键名对不上会静默不生效；
+  - 容差单位与被比较字段值的单位一致（如字段单位为「元」，容差即以「元」计）；
+  - 仅对默认的 `DefaultCheckProcessor`（MEMORY 模式）生效，配置自定义 `checkProcessor` 时不生效。
+  - 新增公开构造器 `DefaultCheckProcessor(Map<String, BigDecimal>)`，供直接组装对账处理器时携带容差。
+
 - `AbstractCheckProcessor.equivalent(Object, Object, BigDecimal)`：
   统一的字段等价性判断入口，支持可选的数值容差（`tolerance`），为后续容差比较能力预留。
 
