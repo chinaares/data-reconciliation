@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -563,5 +564,69 @@ class StreamingCheckExecutorTest {
         assertTrue(output.contains("compared"), output);
         assertTrue(output.contains("stateCounts"), output);
         assertTrue(output.contains("syncCounts"), output);
+    }
+
+    /**
+     * STREAM 模式下 CheckConfig.tolerances 必须真正生效
+     * <p>
+     * 「配置了却不生效」比「不配置」更危险: 该用例钉住 tolerances 从配置透传到流式处理器的链路
+     */
+    @Test
+    void tolerancesFromConfigAreAppliedInStreamMode() {
+        CheckConfig config = CheckConfig.builder()
+                .id("stream-tolerance")
+                .mode(CheckMode.STREAM)
+                .srcOrderedLoader(date -> Stream.of(entry("a", 100L)))
+                .targetOrderedLoader(date -> Stream.of(entry("a", 101L)))
+                .tolerances(Map.of("amount", new BigDecimal("2")))
+                .checkSync(new RecordingCheckSync())
+                .build();
+
+        CheckExecutor executor = CheckExecutor.buildExecutor(config);
+        CheckContext context = executor.process(DATE);
+
+        //差值 1 <= 容差 2: 判为平账, 不产出差异
+        assertEquals(1L, context.getSummary().getComparedCount());
+        assertEquals(0L, context.getSummary().getStateCounts().get(CheckStateEnum.DIFFERENT));
+    }
+
+    /**
+     * STREAM 模式下超出容差的差值仍产出差异
+     */
+    @Test
+    void differencesBeyondToleranceAreReportedInStreamMode() {
+        CheckConfig config = CheckConfig.builder()
+                .id("stream-tolerance-exceeded")
+                .mode(CheckMode.STREAM)
+                .srcOrderedLoader(date -> Stream.of(entry("a", 100L)))
+                .targetOrderedLoader(date -> Stream.of(entry("a", 103L)))
+                .tolerances(Map.of("amount", new BigDecimal("2")))
+                .checkSync(new RecordingCheckSync())
+                .build();
+
+        CheckExecutor executor = CheckExecutor.buildExecutor(config);
+        CheckContext context = executor.process(DATE);
+
+        assertEquals(1L, context.getSummary().getStateCounts().get(CheckStateEnum.DIFFERENT));
+    }
+
+    /**
+     * STREAM 模式下 allowEmptySide=true 时, 单侧为空产出单边差异而不是抛异常
+     */
+    @Test
+    void allowEmptySideProducesUnilateralDiffInStreamMode() {
+        CheckConfig config = CheckConfig.builder()
+                .id("stream-allow-empty-side")
+                .mode(CheckMode.STREAM)
+                .srcOrderedLoader(date -> Stream.<CheckEntry>of())
+                .targetOrderedLoader(date -> Stream.of(entry("a", 1d)))
+                .allowEmptySide(true)
+                .checkSync(new RecordingCheckSync())
+                .build();
+
+        CheckExecutor executor = CheckExecutor.buildExecutor(config);
+        CheckContext context = executor.process(DATE);
+
+        assertEquals(1L, context.getSummary().getStateCounts().get(CheckStateEnum.TARGET_MORE));
     }
 }

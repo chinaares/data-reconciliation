@@ -28,7 +28,18 @@ public class DefaultCheckProcessor extends AbstractCheckProcessor {
      * @param tolerances 字段名 -> 容差, 可为null(等价于精确比较)
      */
     public DefaultCheckProcessor(Map<String, BigDecimal> tolerances) {
+        this(tolerances, false);
+    }
+
+    /**
+     * 指定数值字段容差与单侧为空时的处理方式
+     *
+     * @param tolerances    字段名 -> 容差, 可为null(等价于精确比较)
+     * @param allowEmptySide true: 单侧为空时记为单边差异; false: 抛异常(默认)
+     */
+    public DefaultCheckProcessor(Map<String, BigDecimal> tolerances, boolean allowEmptySide) {
         setTolerances(tolerances);
+        setAllowEmptySide(allowEmptySide);
     }
 
     @Override

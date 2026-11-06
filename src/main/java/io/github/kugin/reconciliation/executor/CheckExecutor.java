@@ -84,7 +84,8 @@ public class CheckExecutor {
 
             //对账处理器组装
             checkProcessor = Optional.ofNullable(checkConfig.getCheckProcessor())
-                    .orElseGet(() -> new StreamingCheckProcessor(srcOrderedLoader, targetOrderedLoader, checkConfig.getCheckSync()));
+                    .orElseGet(() -> new StreamingCheckProcessor(srcOrderedLoader, targetOrderedLoader, checkConfig.getCheckSync(),
+                            checkConfig.getTolerances(), checkConfig.isAllowEmptySide()));
 
             //后置处理器组装
             afterCheckProcessor = new StreamingAfterCheckProcessor(checkConfig.getCheckSync(), checkConfig.getCheckAfter());
@@ -95,7 +96,8 @@ public class CheckExecutor {
             beforeCheckProcessor = new DefaultBeforeCheckProcessor(resourceReader, checkConfig.getCheckPre());
 
             //对账处理器组装
-            checkProcessor = Optional.ofNullable(checkConfig.getCheckProcessor()).orElse(new DefaultCheckProcessor(checkConfig.getTolerances()));
+            checkProcessor = Optional.ofNullable(checkConfig.getCheckProcessor())
+                    .orElse(new DefaultCheckProcessor(checkConfig.getTolerances(), checkConfig.isAllowEmptySide()));
 
             //后置处理器组装
             afterCheckProcessor = new DefaultAfterCheckProcessor(checkConfig.getCheckSync(), checkConfig.getCheckAfter());

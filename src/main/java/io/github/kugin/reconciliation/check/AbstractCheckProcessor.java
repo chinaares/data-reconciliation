@@ -31,12 +31,26 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
     protected Map<String, BigDecimal> tolerances;
 
     /**
+     * 单侧数据为空时是否记为单边差异: false(默认)时抛异常, 认为数据未准备好
+     */
+    protected boolean allowEmptySide;
+
+    /**
      * 设置数值字段容差
      *
      * @param tolerances 字段名 -> 容差, 可为null
      */
     public void setTolerances(Map<String, BigDecimal> tolerances) {
         this.tolerances = tolerances;
+    }
+
+    /**
+     * 设置单侧数据为空时的处理方式
+     *
+     * @param allowEmptySide true: 记为单边差异; false: 抛异常
+     */
+    public void setAllowEmptySide(boolean allowEmptySide) {
+        this.allowEmptySide = allowEmptySide;
     }
 
     /**
@@ -59,8 +73,8 @@ public abstract class AbstractCheckProcessor implements CheckProcessor {
         if (source.isEmpty() && target.isEmpty()){
             return;
         }
-        //单个为空时,认为数据没准备好
-        if (source.isEmpty() || target.isEmpty()) {
+        //单个为空时,默认认为数据没准备好; 显式开启单边差异后继续走, 由比对阶段产出单边差异
+        if (!allowEmptySide && (source.isEmpty() || target.isEmpty())) {
             throw new CheckException("对账数据未准备好");
         }
     }

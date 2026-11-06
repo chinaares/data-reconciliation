@@ -16,6 +16,7 @@ import io.github.kugin.reconciliation.support.RecordingCheckSync;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,33 @@ class StreamingCheckProcessorTest {
 
     private static CheckEntry entry(String key, Object amount) {
         return new CheckEntry(key, null, Map.of("amount", amount));
+    }
+
+    /**
+     * 带容差运行: STREAM 模式下容差必须与 MEMORY 模式一致地生效
+     *
+     * @param source     源侧数据
+     * @param target     目标侧数据
+     * @param tolerances 字段名 -> 容差, 可为 null
+     */
+    private void runWithTolerance(List<CheckEntry> source, List<CheckEntry> target, Map<String, BigDecimal> tolerances) {
+        new StreamingCheckProcessor(
+                date -> source.stream(),
+                date -> target.stream(),
+                sync, tolerances).compare(context);
+    }
+
+    /**
+     * 允许单侧为空时运行
+     *
+     * @param source 源侧数据
+     * @param target 目标侧数据
+     */
+    private void runAllowEmptySide(List<CheckEntry> source, List<CheckEntry> target) {
+        new StreamingCheckProcessor(
+                date -> source.stream(),
+                date -> target.stream(),
+                sync, null, true).compare(context);
     }
 
     /**
@@ -199,6 +227,67 @@ class StreamingCheckProcessorTest {
         assertEquals(0L, summary.getComparedCount());
         assertTrue(summary.getSamples().isEmpty());
         assertCountsConsistent(summary);
+    }
+
+    /**
+     * STREAM 模式下容差必须生效: 差值不超过容差时判为平账
+     * <p>
+     * 若容差在 STREAM 路径被静默忽略, 该用例会失败(差异超出精确比较范围)
+     */
+    @Test
+    void toleranceWithinLimitIsEqualInStreamMode() {
+        runWithTolerance(List.of(entry("a", 100L)), List.of(entry("a", 101L)), Map.of("amount", new BigDecimal("2")));
+
+        assertTrue(sync.getRecorded().isEmpty());
+        assertEquals(1L, context.getSummary().getComparedCount());
+        assertEquals(0L, context.getSummary().getStateCounts().get(CheckStateEnum.DIFFERENT));
+    }
+
+    /**
+     * 差值超出容差时仍产出差异
+     */
+    @Test
+    void toleranceExceededIsDifferentInStreamMode() {
+        runWithTolerance(List.of(entry("a", 100L)), List.of(entry("a", 103L)), Map.of("amount", new BigDecimal("2")));
+
+        assertEquals(1, sync.getRecorded().size());
+        assertEquals(CheckStateEnum.DIFFERENT, sync.getRecorded().get(0).getState());
+        assertEquals(1L, context.getSummary().getStateCounts().get(CheckStateEnum.DIFFERENT));
+    }
+
+    /**
+     * 未配置容差时保持精确比较(向后兼容)
+     */
+    @Test
+    void noToleranceKeepsExactCompareInStreamMode() {
+        runWithTolerance(List.of(entry("a", 100L)), List.of(entry("a", 102L)), null);
+
+        assertEquals(1, sync.getRecorded().size());
+        assertEquals(CheckStateEnum.DIFFERENT, sync.getRecorded().get(0).getState());
+    }
+
+    /**
+     * 允许单侧为空时: 源侧为空应产出目标侧单边差异, 而不是抛异常
+     */
+    @Test
+    void emptySourceSideProducesTargetMoreWhenEmptySideAllowed() {
+        runAllowEmptySide(List.of(), List.of(entry("a", 1d)));
+
+        assertEquals(1, sync.getRecorded().size());
+        assertEquals(CheckStateEnum.TARGET_MORE, sync.getRecorded().get(0).getState());
+        assertCountsConsistent(context.getSummary());
+    }
+
+    /**
+     * 允许单侧为空时: 目标侧为空应产出源侧单边差异
+     */
+    @Test
+    void emptyTargetSideProducesSourceMoreWhenEmptySideAllowed() {
+        runAllowEmptySide(List.of(entry("a", 1d)), List.of());
+
+        assertEquals(1, sync.getRecorded().size());
+        assertEquals(CheckStateEnum.SOURCE_MORE, sync.getRecorded().get(0).getState());
+        assertCountsConsistent(context.getSummary());
     }
 
     @Test

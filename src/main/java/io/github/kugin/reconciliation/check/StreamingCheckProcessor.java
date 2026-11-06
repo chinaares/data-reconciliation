@@ -12,6 +12,7 @@ import io.github.kugin.reconciliation.enums.CheckStateEnum;
 import io.github.kugin.reconciliation.enums.CheckSyncEnum;
 import io.github.kugin.reconciliation.enums.ExecutorStatusEnum;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Iterator;
@@ -56,9 +57,38 @@ public class StreamingCheckProcessor extends AbstractCheckProcessor {
     private final CheckSync checkSync;
 
     public StreamingCheckProcessor(OrderedResourceLoader srcLoader, OrderedResourceLoader tgtLoader, CheckSync checkSync) {
+        this(srcLoader, tgtLoader, checkSync, null);
+    }
+
+    /**
+     * 指定数值字段容差
+     *
+     * @param srcLoader  源侧有序数据源
+     * @param tgtLoader  目标侧有序数据源
+     * @param checkSync  调账回调, 可为 null
+     * @param tolerances 字段名 -> 容差, 可为 null(等价于精确比较)
+     */
+    public StreamingCheckProcessor(OrderedResourceLoader srcLoader, OrderedResourceLoader tgtLoader, CheckSync checkSync,
+                                   Map<String, BigDecimal> tolerances) {
+        this(srcLoader, tgtLoader, checkSync, tolerances, false);
+    }
+
+    /**
+     * 指定数值字段容差与单侧为空时的处理方式
+     *
+     * @param srcLoader      源侧有序数据源
+     * @param tgtLoader      目标侧有序数据源
+     * @param checkSync      调账回调, 可为 null
+     * @param tolerances     字段名 -> 容差, 可为 null(等价于精确比较)
+     * @param allowEmptySide true: 单侧为空时记为单边差异; false: 抛异常(默认)
+     */
+    public StreamingCheckProcessor(OrderedResourceLoader srcLoader, OrderedResourceLoader tgtLoader, CheckSync checkSync,
+                                   Map<String, BigDecimal> tolerances, boolean allowEmptySide) {
         this.srcLoader = srcLoader;
         this.tgtLoader = tgtLoader;
         this.checkSync = checkSync;
+        setTolerances(tolerances);
+        setAllowEmptySide(allowEmptySide);
     }
 
     /**
@@ -100,11 +130,13 @@ public class StreamingCheckProcessor extends AbstractCheckProcessor {
             boolean tgtEmpty = !tgt.hasNext();
             //恰好一侧为空: 数据没准备好
             //必须在 merge 之前判定, 否则差异已产出且调账回调已被触发, 再抛异常为时已晚
-            if (srcEmpty != tgtEmpty) {
+            //显式开启单边差异时不抛异常, 直接进入 merge, 由 merge join 产出该侧的全部单边差异
+            if (srcEmpty != tgtEmpty && !allowEmptySide) {
                 throw new CheckException("对账数据未准备好");
             }
             //两侧都为空: 与全量模式一致, 产出空摘要
-            if (srcEmpty) {
+            //注意: 恰好一侧为空且允许单边差异时不能走这里, 否则非空一侧的数据会被整体丢弃
+            if (srcEmpty && tgtEmpty) {
                 context.setSummary(CheckSummary.empty());
                 return;
             }

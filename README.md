@@ -31,6 +31,8 @@
 |         mode         |        执行模式        |    N     |          默认 `MEMORY`；可选 `STREAM`（流式比对）           |
 |   srcOrderedLoader   | STREAM 模式上游有序数据源 |    C     |   仅 STREAM 模式使用，需按 key（`String.compareTo`）严格升序    |
 | targetOrderedLoader  | STREAM 模式下游有序数据源 |    C     |   仅 STREAM 模式使用，需按 key（`String.compareTo`）严格升序    |
+|      tolerances      |   数值字段容差（Map）   |    N     | 键为 checkData 字段名/实体字段名（**不是数据库列名**）；单位与字段值一致；未配置时精确比较；MEMORY/STREAM 均生效 |
+|   allowEmptySide     |   单侧为空是否记单边差异  |    N     | 默认 `false`：单侧为空抛「对账数据未准备好」；`true` 时产出单边差异（源侧空→`SOURCE_MORE`，目标侧空→`TARGET_MORE`）；两侧都为空不抛异常 |
 |      checkSync       |    对账调账同步处理    |    N     |                  默认不做修改，直接通过                  |
 |      checkAfter      |    对账后置处理逻辑    |    N     |                     默认不做任何处理                     |
 | beforeCheckProcessor |       前置处理器       |    N     |    可以自定义实现或继承`AbstractBeforeCheckProcessor`    |
@@ -50,6 +52,7 @@
 - **迁移注意**：
   - `CheckPre` / `CheckAfter` 不能依赖 `context.getSource()` / `context.getTarget()`：流式模式下这两个字段为 null，全量数据不会加载；
   - `CheckSync` 的调用时机从 AFTER 阶段提前到 CHECK 阶段，异常与副作用语义随之变化；
+  - `tolerances`（数值字段容差）与 `allowEmptySide`（单侧为空记为单边差异）在 STREAM 模式下同样生效；
   - 增量对账（差异数据源）在流式模式下不提供；
   - `doPre` 返回 false 时 STREAM 状态为 `ERROR`，而 MEMORY 模式此时状态停在 `BEFORE`（已知且有意的不对齐）；
   - 是否通过由 `CheckSync.isComplete` / 摘要判定，而不是完整比对结果。
