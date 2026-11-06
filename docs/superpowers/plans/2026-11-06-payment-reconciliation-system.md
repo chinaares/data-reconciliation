@@ -111,7 +111,7 @@ git commit -m "fix(recon): compare numeric fields with compareTo, not equals"
 
 ```java
 class ToleranceTest {
-    private final AbstractCheckProcessor p = new DefaultCheckProcessor(Map.of("amount", new BigDecimal("2")), false);
+    private final AbstractCheckProcessor p = new DefaultCheckProcessor(Map.of("amount", new BigDecimal("2")));
 
     @Test
     void within_tolerance_is_equal() {
@@ -139,8 +139,8 @@ class ToleranceTest {
 
 - `CheckConfig` 加 `private Map<String, BigDecimal> tolerances;`（builder 字段，默认 null）
 - `AbstractCheckProcessor` 加 `protected Map<String, BigDecimal> tolerances;`；把任务 1 的 `equivalent(a, b, tolerance)` 接入：source 遍历时 `tolerances != null ? tolerances.get(k) : null` 作为第三个参数传入
-- `DefaultCheckProcessor` 加构造 `public DefaultCheckProcessor(Map<String, BigDecimal> tolerances, boolean allowEmptySide)`（调用 `setTolerances(tolerances)` 并设置 allowEmptySide 字段）与无参构造（null, false）
-- `CheckExecutor.buildExecutor` 的 MEMORY 分支把 `new DefaultCheckProcessor()` 换成 `new DefaultCheckProcessor(checkConfig.getTolerances(), checkConfig.isAllowEmptySide())`
+- `DefaultCheckProcessor` 加构造 `public DefaultCheckProcessor(Map<String, BigDecimal> tolerances)`（调用 `setTolerances(tolerances)`）与无参构造（null）
+- `CheckExecutor.buildExecutor` 的 MEMORY 分支把 `new DefaultCheckProcessor()` 换成 `new DefaultCheckProcessor(checkConfig.getTolerances())`
 
 - [ ] **步骤 4：运行测试验证通过**
 
@@ -206,7 +206,9 @@ class AllowEmptySideTest {
 - [ ] **步骤 3：实现 allowEmptySide 门控**
 
 - `CheckConfig` 加 `@Builder.Default private boolean allowEmptySide = false;`
-- `AbstractCheckProcessor` 加 `protected boolean allowEmptySide;`（+ setter，供任务 2 的构造调用）；`compareCheck` 改为：两侧皆空 return；`if (!allowEmptySide && (source.isEmpty() || target.isEmpty())) throw new CheckException("对账数据未准备好");`
+- `AbstractCheckProcessor` 加 `protected boolean allowEmptySide;`（+ setter）；`compareCheck` 改为：两侧皆空 return；`if (!allowEmptySide && (source.isEmpty() || target.isEmpty())) throw new CheckException("对账数据未准备好");`
+- `DefaultCheckProcessor` 加构造 `public DefaultCheckProcessor(Map<String, BigDecimal> tolerances, boolean allowEmptySide)`（调用 `setTolerances` 与 `setAllowEmptySide`）；原单参构造保留，委托 `this(tolerances, false)`
+- `CheckExecutor.buildExecutor` 的 MEMORY 分支换为 `new DefaultCheckProcessor(checkConfig.getTolerances(), checkConfig.isAllowEmptySide())`
 
 - [ ] **步骤 4：运行测试验证通过**
 
@@ -233,7 +235,6 @@ git commit -m "feat(recon): make empty-side behavior configurable"
 **文件：**
 - 创建：`pom.xml`、`src/main/resources/application.yml`、`src/main/java/com/simplepay/reconciliation/PayReconciliationApplication.java`
 - 创建：`src/main/java/com/simplepay/reconciliation/config/DataSourceConfig.java`
-- 创建：`src/main/resources/db/migration/V1__init.sql`（空，后续任务补表）
 - 测试：`src/test/java/com/simplepay/reconciliation/ApplicationContextTest.java`
 
 - [ ] **步骤 1：编写失败的测试**
@@ -274,6 +275,7 @@ git init && git add . && git commit -m "chore: scaffold paycoin-reconciliation w
 **文件：**
 - 创建：`src/main/resources/db/migration/V1__init.sql`（6 表 DDL，见规格 §3）
 - 创建：`src/main/java/com/simplepay/reconciliation/entity/` 下 6 个实体（`ReconcileBatch`、`ChannelBill`、`DiffRecord`、`Ticket`、`OperLog`、`ReconcileConfig`）
+- 创建：`src/main/java/com/simplepay/reconciliation/entity/DiffType.java`（枚举：SOURCE_MORE / TARGET_MORE / AMOUNT_DIFF / FEE_DIFF / STATUS_DIFF）
 - 创建：`src/main/java/com/simplepay/reconciliation/repository/recon/` 下 6 个 `JpaRepository`
 - 测试：`src/test/java/com/simplepay/reconciliation/repository/ReconRepositoryTest.java`
 
@@ -561,7 +563,6 @@ git add . && git commit -m "feat: add reconciliation orchestration service"
 
 **文件：**
 - 创建：`src/main/java/com/simplepay/reconciliation/recon/DiffPersistenceService.java`
-- 创建：`src/main/java/com/simplepay/reconciliation/entity/DiffType.java`（枚举）
 - 测试：`src/test/java/com/simplepay/reconciliation/recon/DiffPersistenceServiceTest.java`
 
 - [ ] **步骤 1：编写失败的测试**
