@@ -44,7 +44,7 @@
   恰好一侧数据为空时的行为由「抛 `CheckException`（对账数据未准备好）」改为可配置：
   - `false`（默认）：保持原行为，抛异常，**默认行为不变**（向后兼容）；
   - `true`：不抛异常，改为把非空一侧的全部数据记为单边差异
-    （源侧为空 → `SOURCE_MORE`，目标侧为空 → `TARGET_MORE`）；
+    （源侧为空 → `TARGET_MORE`，目标侧为空 → `SOURCE_MORE`）；
   - 两侧都为空时始终不抛异常，直接产出空结果；
   - MEMORY 与 STREAM 两种模式均生效；配置自定义 `checkProcessor` 时不生效。
   - 新增公开构造器 `DefaultCheckProcessor(Map<String, BigDecimal>, boolean)`，

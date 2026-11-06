@@ -32,7 +32,7 @@
 |   srcOrderedLoader   | STREAM 模式上游有序数据源 |    C     |   仅 STREAM 模式使用，需按 key（`String.compareTo`）严格升序    |
 | targetOrderedLoader  | STREAM 模式下游有序数据源 |    C     |   仅 STREAM 模式使用，需按 key（`String.compareTo`）严格升序    |
 |      tolerances      |   数值字段容差（Map）   |    N     | 键为 checkData 字段名/实体字段名（**不是数据库列名**）；单位与字段值一致；未配置时精确比较；MEMORY/STREAM 均生效 |
-|   allowEmptySide     |   单侧为空是否记单边差异  |    N     | 默认 `false`：单侧为空抛「对账数据未准备好」；`true` 时产出单边差异（源侧空→`SOURCE_MORE`，目标侧空→`TARGET_MORE`）；两侧都为空不抛异常 |
+|   allowEmptySide     |   单侧为空是否记单边差异  |    N     | 默认 `false`：单侧为空抛「对账数据未准备好」；`true` 时产出单边差异（源侧空→`TARGET_MORE`，目标侧空→`SOURCE_MORE`）；两侧都为空不抛异常 |
 |      checkSync       |    对账调账同步处理    |    N     |                  默认不做修改，直接通过                  |
 |      checkAfter      |    对账后置处理逻辑    |    N     |                     默认不做任何处理                     |
 | beforeCheckProcessor |       前置处理器       |    N     |    可以自定义实现或继承`AbstractBeforeCheckProcessor`    |

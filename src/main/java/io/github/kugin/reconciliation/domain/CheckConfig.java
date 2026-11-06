@@ -100,7 +100,7 @@ public class CheckConfig {
      * <p>
      * 默认 false: 恰好一侧为空时抛 {@link io.github.kugin.reconciliation.domain.CheckException}("对账数据未准备好"),
      * 认为数据尚未准备好。设为 true 时不抛异常, 改为把非空一侧的全部数据记为单边差异
-     * (源侧为空 -> SOURCE_MORE, 目标侧为空 -> TARGET_MORE)。
+     * (源侧为空 -> TARGET_MORE, 目标侧为空 -> SOURCE_MORE)。
      * <p>
      * <b>两侧都为空</b>时始终不抛异常, 直接产出空结果。
      * <p>
