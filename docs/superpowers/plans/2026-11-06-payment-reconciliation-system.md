@@ -337,7 +337,8 @@ class AmountUtilTest {
     @Test void double_029_to_cents() { assertEquals(29L, AmountUtil.yuanToCents(0.29)); }
     @Test void double_sum_01_02_to_cents() { assertEquals(30L, AmountUtil.yuanToCents(0.1 + 0.2)); }
     @Test void double_10_to_cents() { assertEquals(1000L, AmountUtil.yuanToCents(10.0)); }
-    @Test void double_large_to_cents() { assertEquals(9999999999999999L, AmountUtil.yuanToCents(99999999999999.99)); }
+    // double 无法精确表示 99999999999999.99（最近值 99999999999999.984375），String.valueOf → "9.999999999999998E13"，HALF_UP 后得 ...998 分
+    @Test void double_large_to_cents() { assertEquals(9999999999999998L, AmountUtil.yuanToCents(99999999999999.99)); }
     @Test void string_100_50_to_cents() { assertEquals(10050L, AmountUtil.yuanStringToCents("100.50")); }
     @Test void string_over_scale_rejected() { assertThrows(IllegalArgumentException.class, () -> AmountUtil.yuanStringToCents("100.555")); }
 }
