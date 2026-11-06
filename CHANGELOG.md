@@ -30,4 +30,4 @@
 - `AbstractCheckProcessor.equivalent(Object, Object, BigDecimal)`：
   统一的字段等价性判断入口，支持可选的数值容差（`tolerance`），为后续容差比较能力预留。
 
-[Unreleased]: https://github.com/kugin/data-reconciliation/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/chinaares/data-reconciliation/compare/HEAD
