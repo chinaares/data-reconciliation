@@ -7,6 +7,18 @@
 
 ### Changed
 
+- **构建与依赖升级（JDK 25 toolchain）**：编译与测试的 toolchain 由 JDK 21 切到 JDK 25，**产物字节码仍是 Java 21**。
+  - 依赖升级：Lombok 1.18.34 → **1.18.48**（< 1.18.40 无法在 JDK 25 上运行，会抛
+    `NoSuchFieldException: com.sun.tools.javac.code.TypeTag :: UNKNOWN`）、Hutool 5.5.8 → **5.8.48**、
+    Redisson 3.27.2 → **3.52.0**（传递依赖 Netty 4.1.107 → 4.1.127.Final）、
+    maven-surefire-plugin 3.2.5 → **3.6.1**。
+  - 编译参数由 `-source 21 -target 21` 改为 **`--release 21`**：产物的 API 面被锁定在 Java 21，
+    不会再静默引用 JDK 22+ 才有的 API。**运行时要求不变（仍需 Java 21+）**。
+  - ⚠️ 下游注意：本库以 compile scope 传递 Redisson 3.52.0 + Netty 4.1.127.Final，
+    且公开 API 直接暴露 `org.redisson.api.RedissonClient` 类型。若你的工程自带 Redisson/Netty
+    版本管理（如 Spring Boot BOM），请确认解析出的版本不低于上述值。
+  - 升级的风险评估、实测矩阵与踩坑记录见 `docs/superpowers/plans/2026-11-16-jdk-25-upgrade.md`。
+
 - **数值字段比较语义变更**：`AbstractCheckProcessor.compareCheckData` 对数值字段（`BigDecimal` / 其它 `Number`）
   改为**按数值比较**（转 `BigDecimal` 后 `compareTo == 0`），不再使用 `Object.equals`。
   - `BigDecimal` scale 不同但值相同（如 `10.0` 与 `10.00`）不再视为差异；
