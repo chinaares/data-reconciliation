@@ -5,14 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Prerequisites
 
 - JDK 25. The `pom.xml` pins `<jdkToolchain><version>25</version></jdkToolchain>` for both
-  `maven-compiler-plugin` and `maven-surefire-plugin`, so **a JDK 25 toolchain is mandatory** —
-  Maven aborts when it cannot find one.
+  `maven-compiler-plugin` and `maven-surefire-plugin`, so **a JDK 25 toolchain is mandatory**.
 - Install one, e.g. `brew install openjdk` (Temurin 25) or use an existing JDK 25
   (e.g. `/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home`).
 - Lombok must be **≥ 1.18.40** — older versions cannot run on JDK 25 and fail with Lombok's
   `NoSuchFieldException: com.sun.tools.javac.code.TypeTag :: UNKNOWN`. The `pom.xml` pins 1.18.48.
-- `~/.m2/toolchains.xml` must point at that JDK 25 home — `<vendor>` must match the actual JDK
-  vendor (`adoptium` for Temurin), otherwise Maven silently falls back to the default JDK:
+- `~/.m2/toolchains.xml` must declare a toolchain whose `<version>` is **exactly `25`**:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -30,6 +28,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 </toolchains>
 ```
 
+  - `<version>` must be the bare major version `25`, not `25.0.4.1` — Maven matches the pom's
+    `{version=25}` request by version semantics, and a full version string does not match.
+  - `<vendor>` is a descriptive label only. The pom requests a version and nothing else, so the
+    vendor never participates in matching; `<jdkHome>` is what actually selects the JDK.
+  - **A mismatched toolchain fails in two different ways**: `maven-surefire-plugin` aborts with
+    `Requested toolchain specification did not match any configured toolchain: {version=25}`,
+    while `maven-compiler-plugin` silently falls back to the JDK running Maven. A green
+    `mvn compile` therefore does **not** prove JDK 25 was used — always check the toolchain line below.
+
 Verify the toolchain is picked up — the build log must print the JDK path, not just succeed:
 
 ```bash
@@ -37,8 +44,9 @@ mvn clean compile -X 2>&1 | grep "Toolchain in maven-compiler-plugin"
 # [INFO] Toolchain in maven-compiler-plugin: JDK[/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home]
 ```
 
-- **The published bytecode still targets Java 21.** `main.java.version` stays at 21, so the jar
-  keeps running on Java 21 runtimes; only the compiler and the forked test JVM are JDK 25. Raise
+- **The published bytecode still targets Java 21.** `main.java.version` stays at 21 and the build
+  uses `--release 21`, so the compiler rejects any API newer than Java 21 — the jar cannot
+  silently depend on a JDK 22+ API. Only the compiler and the forked test JVM are JDK 25. Raise
   `main.java.version` separately if Java 25 language features are ever needed.
 - The upgrade rationale, the measured risk matrix and the exact version matrix behind these pins
   live in `docs/superpowers/plans/2026-11-16-jdk-25-upgrade.md`.
